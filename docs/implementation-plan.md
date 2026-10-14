@@ -43,3 +43,7 @@ Privy app ID, server-held app secret, verified user wallet ownership flow, testn
 ## Privy authentication implementation
 
 The supplied public App ID is connected through `PrivyProvider` and email-only login. Server public app configuration confirms email authentication, the deployment domain and automatic EVM/Solana wallet creation disabled. The React bridge waits for `ready`, exposes sign-in/account/sign-out states and keeps the preview funds explicitly separate from authentication. The server App Secret is still required for user-owned XRPL provisioning; no wallet creation endpoint or transaction signing has been enabled.
+
+## Testnet provisioning implementation
+
+Cloudflare D1 now stores hashed user-specific external IDs, Privy wallet IDs and addresses. The Worker verifies ES256 JWT signature, audience, issuer, expiration and subject before reading or creating a wallet. User identity is never accepted from request JSON. Wallet creation assigns `owner.user_id` from the verified subject. The encrypted secret stays server-side. The atomic pilot quota includes pending reservations; failed attempts retain their slot for reconciliation. No XRP is funded, no account is activated and no signing endpoint is exposed. Keys are chain-specific rather than intrinsically testnet-only, so the interface explicitly designates the address for testnet and prohibits real deposits.

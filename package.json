@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "build:worker": "esbuild server/entry.js --bundle --format=esm --platform=browser --outfile=build/worker.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@privy-io/react-auth": "3.49.0",
+    "jose": "^6.2.12",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

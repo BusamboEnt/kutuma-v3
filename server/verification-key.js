@@ -1,0 +1,1 @@
+export const verificationKey = "-----BEGIN PUBLIC KEY-----MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEgPeG7Ugxl5g+3PUvov3CzuVavYAPTvwndTRSy5CC7k9PpPvNI5bHEHilYgQxN4CadP2hLRV8AWpbZA0lf32Evg==-----END PUBLIC KEY-----\n";

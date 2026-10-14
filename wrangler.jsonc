@@ -2,6 +2,22 @@
   "name": "sawa-wallet-demo-20261014",
   "account_id": "bdfeb7aa9f79e31fd1590154715abdc6",
   "compatibility_date": "2026-10-14",
-  "assets": {"directory": "./dist"},
-  "observability": {"enabled": true}
+  "assets": {
+    "directory": "./dist",
+    "run_worker_first": [
+      "/api/*"
+    ]
+  },
+  "observability": {
+    "enabled": true
+  },
+  "main": "server/entry.js",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kutuma-v3-wallets",
+      "database_id": "3bee9b1b-81db-4b3f-a2cb-e3eb75740eca",
+      "migrations_dir": "migrations"
+    }
+  ]
 }
