@@ -1,11 +1,12 @@
-export function showTestnet({wallet,getAccessToken,isCurrent}) {
+export function showTestnet({wallet,getAccessToken,isCurrent,onSend}) {
  const ui=window.kutumaUI;
  let snapshot=window.kutumaBalance;
  let busy=false;
  function screen(error='') {
   if(!isCurrent())return;
   const details=snapshot?`${snapshot.activated?'Active on testnet':'Not activated'} · ${snapshot.balanceXrp} XRP`:'Balance not checked';
-  ui.show('XRP LEDGER TESTNET',`<h2>Your test wallet.</h2><p>${ui.escape(details)}</p><label>Testnet address<input readonly id="testnet-address" value="${ui.escape(wallet.address)}"></label>${ui.notice(ui.escape(error||'Only test tokens, with no monetary value. Never send real funds. RLUSD balances elsewhere remain sample data.'))}<button class="primary" id="testnet-refresh">Refresh balance</button>${snapshot&&!snapshot.activated?'<button class="secondary" id="testnet-activate">Activate with test XRP</button>':''}<button class="secondary" id="testnet-copy">Copy address</button><button class="secondary" id="done">Back to wallet</button>`);
+  ui.show('XRP LEDGER TESTNET',`<h2>Your test wallet.</h2><p>${ui.escape(details)}</p><label>Testnet address<input readonly id="testnet-address" value="${ui.escape(wallet.address)}"></label>${ui.notice(ui.escape(error||'Only test tokens, with no monetary value. Never send real funds. RLUSD balances elsewhere remain sample data.'))}<button class="primary" id="testnet-refresh">Refresh balance</button>${snapshot&&!snapshot.activated?'<button class="secondary" id="testnet-activate">Activate with test XRP</button>':''}${snapshot?.activated&&onSend?'<button class="secondary" id="testnet-send">Send test XRP</button>':''}<button class="secondary" id="testnet-copy">Copy address</button><button class="secondary" id="done">Back to wallet</button>`);
+  const send=document.querySelector('#testnet-send');if(send)send.onclick=onSend;
   document.querySelector('#testnet-refresh').onclick=()=>request(false);
   const activate=document.querySelector('#testnet-activate');if(activate)activate.onclick=()=>request(true);
   document.querySelector('#testnet-copy').onclick=async()=>{try{await navigator.clipboard.writeText(wallet.address);document.querySelector('#testnet-copy').textContent='Copied';}catch{document.querySelector('#testnet-address').select();}};

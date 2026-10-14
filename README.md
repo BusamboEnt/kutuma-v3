@@ -32,3 +32,11 @@ The backend verifies Privy access tokens, assigns the verified user as wallet ow
 ## Testnet activation and balances
 
 From Account, open Testnet balance & activation. Refresh checks the validated XRPL testnet ledger. If the account is unfunded, Activate with test XRP requests free, valueless tokens from the testnet faucet for the stored authenticated wallet address. Requests are limited to one per ten minutes and skip the faucet for already active accounts. A faucet response is not treated as a validated deposit. No faucet funding occurs automatically. Selecting XRP displays the live testnet balance after a successful refresh; RLUSD remains sample data, and test XRP transfers remain disabled.
+
+## Sending test XRP
+
+Select XRP and tap Send, or open Account → Testnet balance & activation → Send test XRP. Enter a different testnet r-address, amount and destination tag if required. The server checks checksum, activation, deposit authorization, network fee, sender reserve and recipient base reserve. Review the amount, fee and reserve, then approve the exact Privy request through the owner-signature hook. Approval expires after two minutes and the transaction also has a bounded LastLedgerSequence.
+
+The server validates the signed blob against the prepared payload before persisting and submitting it to the fixed testnet endpoint. Expired or superseded signing requests cannot be persisted or submitted. One in-flight signing/submission per wallet is permitted. Retrying reuses the same signed blob and ledger hash. Receipts stay pending until a validated ledger reports the final result. Recent testnet transfers are stored separately from sample RLUSD activity and can be revisited after reloading.
+
+No mainnet sending or real stablecoin transfer has been enabled. The full owner-approval flow needs the app owner to test with their email and a recipient testnet address. No user transfer is submitted automatically by deployment or verification.

@@ -1,7 +1,8 @@
 import React, {useEffect, useState, useRef, Component} from 'react';
 import {createRoot} from 'react-dom/client';
-import {PrivyProvider, usePrivy, useLogin} from '@privy-io/react-auth';
+import {PrivyProvider, usePrivy, useLogin, useAuthorizationSignature} from '@privy-io/react-auth';
 import './style.css';
+import {showTransfer} from './transfer-ui.js';
 import {showTestnet} from './testnet-ui.js';
 import './wallet.js';
 
@@ -22,6 +23,7 @@ class AuthBoundary extends Component {
 }
 function AuthBridge() {
   const {ready, authenticated, user, logout, getAccessToken} = usePrivy();
+  const {generateAuthorizationSignature}=useAuthorizationSignature();
   const [wallet, setWallet] = useState(null);
   const currentUser = useRef(null);
   currentUser.current = authenticated ? user?.id : null;
@@ -43,6 +45,7 @@ function AuthBridge() {
     connect.textContent = wallet ? 'Wallet' : 'Get wallet';
     const status = document.querySelector('#sign-in-status');
     if(status) status.textContent = authenticated ? 'Signed in' : 'Sign in with email';
+    window.kutumaSend=()=>{if(wallet)showTransfer({wallet,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});};
     window.kutumaAuth = {open: () => {
       if(!ready) {message('Getting ready', 'Secure sign-in is loading. Please try again in a moment.');return;}
       ui.close();
@@ -57,7 +60,7 @@ function AuthBridge() {
         document.querySelector('#account-logout').onclick = async () => {
           try {await logout();setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaUI.render();ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
         };
-        if(currentWallet){document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id});}
+        if(currentWallet){document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});}
         if(!currentWallet)document.querySelector('#create-wallet').onclick=async()=>{
           const owner=user?.id;
           const button=document.querySelector('#create-wallet');button.disabled=true;button.textContent='Setting up your wallet…';
@@ -73,8 +76,8 @@ function AuthBridge() {
       renderAccount(wallet);
     }};
     connect.onclick=()=>window.kutumaAuth.open();
-    return () => {delete window.kutumaAuth;};
-  }, [ready, authenticated, user, login, logout, wallet, getAccessToken]);
+    return () => {delete window.kutumaAuth;delete window.kutumaSend;};
+  }, [ready, authenticated, user, login, logout, wallet, getAccessToken, generateAuthorizationSignature]);
   return null;
 }
 buttons().forEach(b => {b.disabled = true;});

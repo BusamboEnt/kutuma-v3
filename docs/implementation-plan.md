@@ -51,3 +51,7 @@ Cloudflare D1 now stores hashed user-specific external IDs, Privy wallet IDs and
 ## Testnet activation
 
 The authenticated API reads only the stored user's wallet address. GET /api/wallet/balance queries account_info on the official testnet endpoint with ledger_index=validated. POST /api/wallet/activate first checks account state; only an unactivated wallet can request faucet funding. A conditional D1 timestamp update imposes a ten-minute cooldown. Faucet receipt addresses are checked, and ledger confirmation is queried separately. Requests never contact mainnet. The frontend activates on explicit button presses and keeps live test XRP separate from sample RLUSD. Late responses do not reopen closed dialogs. Signing and transfers are still disabled.
+
+## Test XRP transfers
+
+Preparation stores a server-built Payment and Privy authorization payload under an authenticated owner. It checks address checksum, destination requirements, current fee and retained reserve using validated testnet state. The frontend owner approves the exact URL, body, idempotency key and request expiry through useAuthorizationSignature. The backend checks the returned signed blob against the prepared bytes, fences late signing responses and persists the blob before submitting. D1 prevents concurrent signing/submission for the same wallet. Final status is based on validated ledger metadata; uncertain outcomes remain pending. User-specific recent receipts support refresh and retry of the same hash. Mainnet, stablecoin sending and SADC payouts remain disabled.

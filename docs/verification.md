@@ -29,3 +29,11 @@ All nine provisioning and testnet tests pass. Tests cover exact drop formatting,
 A read-only lookup of the existing wallet on the official testnet endpoint returned validated `actNotFound`, indicating that activation was still needed at check time. No automatic funding was performed.
 
 Browser verification at 320×568 confirmed SDK readiness, no home scrolling, and 401 responses for unauthenticated balance and activation endpoints. The actual activation screen function was exercised with synthetic account state and no access token: no clipped controls or scrolling. A synthetic live XRP balance of 20.123456 rendered as 20.12 with an XRP testnet / Live balance label. These UI checks did not execute authenticated faucet funding. The owner should test Activate with test XRP and refresh to confirm the actual validated deposit.
+
+## Test XRP transfers
+
+Sixteen backend checks pass (five provisioning, four activation/balance and seven transfer checks). Transfer tests use locally generated test keys and mocked network endpoints: they verify exact decimal conversion, recipient checksum, tag and reserve guards, owner isolation, short-lived authorization payloads, reuse of an identical signed blob, transaction hash parity with xrpl.js, pending versus validated results, validated failure handling, expired reviews, and rejection of approvals that arrive after expiry. The production Worker uses the standard XRPL SHA-512Half transaction hash with the TXN prefix, cross-checked against xrpl.js using an actual signed fixture.
+
+The authenticated real Privy signing flow and testnet payment still require the owner's email session. No faucet or transfer was automatically triggered in testing.
+
+At 320×568, browser QA initialized Privy and received 401 for unauthenticated transfer preparation. The actual transfer UI function was exercised with synthetic tokens, approval and API responses: form, tagged-recipient review, pending receipt, validated receipt and history had no scrolling or clipped controls. Pending and validated text matched their fixtures. This did not generate a real Privy authorization signature or submit a testnet payment. The final frontend invalidates the cached balance on submission and refreshes it after a terminal ledger result.
