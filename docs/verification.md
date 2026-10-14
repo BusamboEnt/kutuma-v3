@@ -21,3 +21,11 @@ Five backend tests pass: absent/forged/cross-origin authentication rejected; GET
 Deployed unauthenticated and forged-token requests both return 401. The deployed Worker retains an encrypted `secret_text` binding for PRIVY_APP_SECRET and the D1 database binding. At 320×568, Privy initializes and the email sign-in modal opens; the wallet container has no scrolling. First browser check observed the modal while its lazy-loaded UI was still loading; waiting for the email input confirmed success.
 
 A live authenticated creation was not performed because it requires the owner's email verification. No wallet or quota slot was consumed during these checks. No faucet funding, activation, trust line or transaction submission is implemented.
+
+## Testnet activation and live XRP display
+
+All nine provisioning and testnet tests pass. Tests cover exact drop formatting, validated balance requirements, network failures staying unavailable rather than zero, already-active accounts skipping faucet calls, owner-address-only funding and a ten-minute cooldown. Both production builds pass.
+
+A read-only lookup of the existing wallet on the official testnet endpoint returned validated `actNotFound`, indicating that activation was still needed at check time. No automatic funding was performed.
+
+Browser verification at 320×568 confirmed SDK readiness, no home scrolling, and 401 responses for unauthenticated balance and activation endpoints. The actual activation screen function was exercised with synthetic account state and no access token: no clipped controls or scrolling. A synthetic live XRP balance of 20.123456 rendered as 20.12 with an XRP testnet / Live balance label. These UI checks did not execute authenticated faucet funding. The owner should test Activate with test XRP and refresh to confirm the actual validated deposit.

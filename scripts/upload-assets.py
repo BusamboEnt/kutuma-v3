@@ -4,11 +4,14 @@ from pathlib import Path
 session=json.loads(sys.stdin.readline())
 root=Path(__file__).resolve().parent.parent/'dist'
 files={}
-for p in root.rglob('*'):
+for p in sorted(root.rglob('*')):
  if p.is_file():
   data=p.read_bytes()
   digest=hashlib.sha256(base64.b64encode(data)+p.suffix.lstrip('.').encode()).hexdigest()[:32]
   files[digest]=p
+if 'bucket_indices' in session:
+ hashes=list(files)
+ session['buckets']=[[hashes[i] for i in bucket] for bucket in session['bucket_indices']]
 completion=session['jwt'] if not session['buckets'] else None
 for bucket in session['buckets']:
  boundary='kutuma-assets-boundary'

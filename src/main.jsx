@@ -2,6 +2,7 @@ import React, {useEffect, useState, useRef, Component} from 'react';
 import {createRoot} from 'react-dom/client';
 import {PrivyProvider, usePrivy, useLogin} from '@privy-io/react-auth';
 import './style.css';
+import {showTestnet} from './testnet-ui.js';
 import './wallet.js';
 
 const appId = import.meta.env.VITE_PRIVY_APP_ID || 'cmtq2e1jx00ec0cjs0chvb1s6';
@@ -26,13 +27,13 @@ function AuthBridge() {
   currentUser.current = authenticated ? user?.id : null;
   useEffect(() => {
     let cancelled=false;
-    setWallet(null);window.kutumaWallet=null;
+    setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaUI.render();
     if(ready && authenticated && user?.id) {
       (async()=>{try{const token=await getAccessToken();if(!token||cancelled)return;const r=await fetch('/api/wallet',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const data=await r.json();if(!cancelled && r.ok)setWallet(data.wallet);}catch{}})();
     }
     return ()=>{cancelled=true;};
   },[ready,authenticated,user?.id,getAccessToken]);
-  useEffect(()=>{window.kutumaWallet=wallet;},[wallet]);
+  useEffect(()=>{window.kutumaWallet=wallet;window.kutumaUI.render();},[wallet]);
   const {login} = useLogin({onError: () => message('Couldn’t sign in', 'Please try again. Email sign-in must be enabled and this domain allowed in the Privy dashboard.')});
   useEffect(() => {
     buttons().forEach(b => {b.disabled = !ready;});
@@ -54,12 +55,10 @@ function AuthBridge() {
         ui.show('YOUR ACCOUNT', `<h2>${currentWallet?'Your testnet wallet.':'You’re signed in.'}</h2><p>${ui.escape(email)}</p>${details}<button class="secondary" id="account-done">Back to wallet</button><button class="secondary" id="account-logout">Sign out</button>`);
         document.querySelector('#account-done').onclick = ui.close;
         document.querySelector('#account-logout').onclick = async () => {
-          try {await logout();setWallet(null);window.kutumaWallet=null;ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
+          try {await logout();setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaUI.render();ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
         };
-        if(currentWallet)document.querySelector('#copy-address').onclick=async()=>{
-          try{await navigator.clipboard.writeText(currentWallet.address);document.querySelector('#copy-address').textContent='Address copied';}catch{document.querySelector('#wallet-address').select();}
-        };
-        else document.querySelector('#create-wallet').onclick=async()=>{
+        if(currentWallet){document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id});}
+        if(!currentWallet)document.querySelector('#create-wallet').onclick=async()=>{
           const owner=user?.id;
           const button=document.querySelector('#create-wallet');button.disabled=true;button.textContent='Setting up your wallet…';
           try{
@@ -67,7 +66,7 @@ function AuthBridge() {
             const r=await fetch('/api/wallet',{method:'POST',headers:{Authorization:'Bearer '+token}});
             const data=await r.json();if(!r.ok)throw Error(data.error || 'Please try again later.');
             if(currentUser.current!==owner)return;
-            setWallet(data.wallet);window.kutumaWallet=data.wallet;renderAccount(data.wallet);
+            setWallet(data.wallet);window.kutumaWallet=data.wallet;if(document.querySelector('#flow').open&&document.querySelector('#flow-label').textContent==='YOUR ACCOUNT')renderAccount(data.wallet);
           }catch(error){if(currentUser.current===owner)message('Wallet setup needs a moment',error.message || 'Please try again later.');}
         };
       };

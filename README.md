@@ -28,3 +28,7 @@ The backend verifies Privy access tokens, assigns the verified user as wallet ow
 ## Backend checks
 
 `npm test` checks request authorization, read-only lookup, owner assignment, reuse, the quota and recovery from an interrupted creation. `npm run build:worker` emits the bundled Worker. Apply `migrations/0001_wallets.sql` to the D1 binding declared in `wrangler.jsonc`. The production assets and backend are deployed together, preserving encrypted secrets.
+
+## Testnet activation and balances
+
+From Account, open Testnet balance & activation. Refresh checks the validated XRPL testnet ledger. If the account is unfunded, Activate with test XRP requests free, valueless tokens from the testnet faucet for the stored authenticated wallet address. Requests are limited to one per ten minutes and skip the faucet for already active accounts. A faucet response is not treated as a validated deposit. No faucet funding occurs automatically. Selecting XRP displays the live testnet balance after a successful refresh; RLUSD remains sample data, and test XRP transfers remain disabled.

@@ -47,3 +47,7 @@ The supplied public App ID is connected through `PrivyProvider` and email-only l
 ## Testnet provisioning implementation
 
 Cloudflare D1 now stores hashed user-specific external IDs, Privy wallet IDs and addresses. The Worker verifies ES256 JWT signature, audience, issuer, expiration and subject before reading or creating a wallet. User identity is never accepted from request JSON. Wallet creation assigns `owner.user_id` from the verified subject. The encrypted secret stays server-side. The atomic pilot quota includes pending reservations; failed attempts retain their slot for reconciliation. No XRP is funded, no account is activated and no signing endpoint is exposed. Keys are chain-specific rather than intrinsically testnet-only, so the interface explicitly designates the address for testnet and prohibits real deposits.
+
+## Testnet activation
+
+The authenticated API reads only the stored user's wallet address. GET /api/wallet/balance queries account_info on the official testnet endpoint with ledger_index=validated. POST /api/wallet/activate first checks account state; only an unactivated wallet can request faucet funding. A conditional D1 timestamp update imposes a ten-minute cooldown. Faucet receipt addresses are checked, and ledger confirmation is queried separately. Requests never contact mainnet. The frontend activates on explicit button presses and keeps live test XRP separate from sample RLUSD. Late responses do not reopen closed dialogs. Signing and transfers are still disabled.

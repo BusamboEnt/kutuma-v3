@@ -1,9 +1,10 @@
 import {importSPKI, jwtVerify} from 'jose';
+import {testnetForUser} from './testnet.js';
 import {verificationKey} from './verification-key.js';
 const appId='cmtq2e1jx00ec0cjs0chvb1s6';
 const tokenKey=importSPKI(verificationKey,'ES256');
-export function json(data,status=200){return Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
-export async function externalId(user){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(appId+':testnet:'+user));return 'kutuma_test_'+[...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,48);}
+import {externalId,json} from './helpers.js';
+export {externalId,json} from './helpers.js';
 function publicWallet(row){return row?.status==='ready'?{id:row.wallet_id,address:row.address,network:'xrpl-testnet',activation:'not-checked'}:null;}
 async function upstream(env,path,body,key){return fetch('https://api.privy.io/v1'+path,{method:body?'POST':'GET',headers:{Authorization:'Basic '+btoa(appId+':'+env.PRIVY_APP_SECRET),'privy-app-id':appId,...(body?{'Content-Type':'application/json','privy-idempotency-key':key}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(20000)});}
 export async function walletForUser(request,env,user){
@@ -31,8 +32,8 @@ export async function walletForUser(request,env,user){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
- if(path!=='/api/wallet')return json({error:'Not found'},404);
- if(!['GET','POST'].includes(request.method))return json({error:'Method not allowed'},405);
+ if(!['/api/wallet','/api/wallet/balance','/api/wallet/activate'].includes(path))return json({error:'Not found'},404);
+ if(!['GET','POST'].includes(request.method)||(path==='/api/wallet/balance'&&request.method!=='GET')||(path==='/api/wallet/activate'&&request.method!=='POST'))return json({error:'Method not allowed'},405);
  const origin=request.headers.get('Origin');
  if(origin&&origin!==new URL(request.url).origin)return json({error:'Origin not allowed'},403);
  const token=request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1];
@@ -40,5 +41,5 @@ export default {async fetch(request,env){
  let user;
  try{const {payload}=await jwtVerify(token,await tokenKey,{issuer:'privy.io',audience:appId,algorithms:['ES256'],requiredClaims:['exp','iat','sub']});if(!payload.sub?.startsWith('did:privy:'))throw Error();user=payload.sub;}catch{return json({error:'Please sign in again.'},401);}
  if(!env.DB)return json({error:'Wallet storage is unavailable.'},503);
- try{return await walletForUser(request,env,user);}catch{return json({error:'Wallet setup is temporarily unavailable. Please retry.'},503);}
+ try{if(path!=='/api/wallet')return await testnetForUser(request,env,user,path.endsWith('/activate'));return await walletForUser(request,env,user);}catch{return json({error:'Wallet setup is temporarily unavailable. Please retry.'},503);}
 }};
