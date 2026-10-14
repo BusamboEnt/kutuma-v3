@@ -1,11 +1,26 @@
-# Kutuma v3 wallet prototype
+# Kutuma v3
 
-A compact dark mobile wallet designed for Privy + XRP Ledger and RLUSD, with planned SADC mobile money support.
+A compact mobile wallet for Privy + XRP Ledger and RLUSD, with planned SADC mobile money support.
 
-Live demo: https://sawa-wallet-demo-20261014.kutuma-lab.workers.dev
+App: https://sawa-wallet-demo-20261014.kutuma-lab.workers.dev
+Repository: https://github.com/BusamboEnt/kutuma-v3
 
-Open `dist/index.html` or serve `dist/` with a static server. No build is required. All balances and transactions are sample data. Wallet sends modify only browser-local demo state. Buy and mobile money previews do not persist recipient details or send any request. Live sign-in, deposits, signing, funding and payouts are not connected.
+## Development
 
-The main screen is sized to the mobile viewport, with Send / Buy / Pay / Deposit and bottom navigation. Activity uses pagination. Forms use focused steps. The Buy preview follows the supplied dark Minisend screen with paired payment/receive panels and amount presets. RLUSD is the default demo asset; XRP can be selected separately.
+`npm ci` then `npm run dev`. Build with `npm run build`; Vite emits `dist/`. Source lives in `index.html` and `src/`. `.env.example` documents the public Privy app identifier; never place an App Secret in a `VITE_` variable.
 
-See `docs/implementation-plan.md` for verified Privy/XRPL capabilities, free-tier interpretation, RLUSD setup requirements and provisioning constraints. Privy's public free tier is based on monthly active users; the user-provided 500-wallet allowance remains a pilot assumption pending account confirmation.
+## Privy sign-in
+
+The React SDK initializes with the supplied App ID. Sign in / Get wallet opens Privy's email authentication UI. Authenticated visitors can inspect their account and sign out. Buttons wait for SDK readiness; errors offer a retry. Both Ethereum and Solana automatic wallet creation are disabled. No wallet is created by visits, login, reconnect or preview navigation.
+
+Email authentication and the deployed domain were confirmed against Privy's public application configuration. Full email OTP completion must be checked by the app owner using their own email. No session tokens are logged or placed in the wallet UI.
+
+## Current wallet behavior
+
+All balances and transactions remain sample data, including after sign-in. Demo sends change only browser-local sample state. Funding, deposits, XRP Ledger wallet provisioning, signing and mobile money payouts are not connected. The App ID alone cannot authorize server-side XRPL wallet creation.
+
+Next step: store `PRIVY_APP_SECRET` securely as a Cloudflare Worker secret, then implement verified user-owned XRPL testnet provisioning and persistence. Do not paste this secret into chat or commit it to Git. See `docs/implementation-plan.md` for ownership, reserve and stablecoin requirements.
+
+## Hosting
+
+`wrangler.jsonc` declares the existing Cloudflare Worker and static build directory. The connected Cloudflare API can upload the build via the assets manifest and short-lived upload-session helpers in `scripts/`. Uploaded authorization is passed through stdin and must not be logged. Generated `dist/` is excluded from source control.

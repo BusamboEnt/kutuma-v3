@@ -1,0 +1,7 @@
+{
+  "name": "sawa-wallet-demo-20261014",
+  "account_id": "bdfeb7aa9f79e31fd1590154715abdc6",
+  "compatibility_date": "2026-10-14",
+  "assets": {"directory": "./dist"},
+  "observability": {"enabled": true}
+}

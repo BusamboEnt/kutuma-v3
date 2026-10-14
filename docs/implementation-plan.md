@@ -39,3 +39,7 @@ Use dynamic viewport units and safe-area insets, test all essential controls wit
 ## Next implementation prerequisites
 
 Privy app ID, server-held app secret, verified user wallet ownership flow, testnet setup, token issuer verification, persisted wallet-to-user records and server-side authorization. Funding and payout partners can be attached later. Do not expose secrets in static JavaScript or ask the user to paste secrets into chat.
+
+## Privy authentication implementation
+
+The supplied public App ID is connected through `PrivyProvider` and email-only login. Server public app configuration confirms email authentication, the deployment domain and automatic EVM/Solana wallet creation disabled. The React bridge waits for `ready`, exposes sign-in/account/sign-out states and keeps the preview funds explicitly separate from authentication. The server App Secret is still required for user-owned XRPL provisioning; no wallet creation endpoint or transaction signing has been enabled.
