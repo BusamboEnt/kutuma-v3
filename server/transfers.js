@@ -7,7 +7,7 @@ const appId='cmtq2e1jx00ec0cjs0chvb1s6';
 const rpcUrl='https://s.altnet.rippletest.net:51234/';
 export function toDrops(value){if(!/^(?:0|[1-9]\d{0,10})(?:\.\d{1,6})?$/.test(String(value)))throw Error('Enter XRP with at most six decimal places.');const [a,b='']=String(value).split('.');return BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'));}
 export async function rpc(method,params={}){const r=await fetch(rpcUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,params:[params]}),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Testnet is unavailable.');return (await r.json()).result;}
-function view(row){const tx=JSON.parse(row.transaction_json);return {id:row.id,kind:tx.TransactionType==='TrustSet'?'trustline':'payment',status:row.status,hash:row.tx_hash,resultCode:row.result_code,destination:tx.Destination||tx.LimitAmount?.issuer,amountDrops:tx.Amount||null,feeDrops:tx.Fee,createdAt:row.created_at,network:'xrpl-testnet'};}
+function view(row){const tx=JSON.parse(row.transaction_json);return {id:row.id,kind:tx.TransactionType==='TrustSet'?'trustline':'payment',status:row.status,hash:row.tx_hash,resultCode:row.result_code,destination:tx.Destination||tx.LimitAmount?.issuer,asset:typeof tx.Amount==='object'?'RLUSD':tx.TransactionType==='Payment'?'XRP':null,tokenAmount:typeof tx.Amount==='object'?tx.Amount.value:null,issuer:typeof tx.Amount==='object'?tx.Amount.issuer:null,amountDrops:typeof tx.Amount==='string'?tx.Amount:null,feeDrops:tx.Fee,createdAt:row.created_at,network:'xrpl-testnet'};}
 export async function prepareTransfer(env,user,input){
  const owner=await externalId(user);
  const wallet=await env.DB.prepare('SELECT * FROM wallets WHERE external_id=?').bind(owner).first();

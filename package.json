@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "build:worker": "esbuild server/entry.js --bundle --minify --format=esm --platform=browser --outfile=build/worker.js",
-    "test": "node tests/wallet.test.js && node tests/testnet.test.js && node tests/transfers.test.js && node tests/rlusd.test.js"
+    "test": "node tests/wallet.test.js && node tests/testnet.test.js && node tests/transfers.test.js && node tests/rlusd.test.js && node tests/rlusd-payments.test.js"
   },
   "dependencies": {
     "@privy-io/react-auth": "3.49.0",

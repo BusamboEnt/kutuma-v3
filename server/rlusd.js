@@ -7,7 +7,7 @@ export async function rlUsdState(address){
  const [account,issuer]=await Promise.all([rpc('account_info',{account:address,ledger_index:'validated',strict:true}),rpc('account_info',{account:RLUSD.issuer,ledger_index:'validated',strict:true})]);
  if(issuer?.error||!issuer?.validated)throw Error('The official RLUSD test issuer could not be verified.');
  const globalFrozen=!!((issuer.account_data.Flags||0)&0x00400000),requiresAuth=!!((issuer.account_data.Flags||0)&0x00040000);
- const base={issuer:RLUSD.issuer,currency:RLUSD.currency,network:RLUSD.network,faucet:RLUSD.faucet};
+ const base={transferRate:issuer.account_data.TransferRate??1000000000,issuer:RLUSD.issuer,currency:RLUSD.currency,network:RLUSD.network,faucet:RLUSD.faucet};
  if(account?.error==='actNotFound')return {...base,activated:false,trustline:false,balance:'0',ready:false};
  if(account?.error||!account?.validated)throw Error('Testnet account state is unavailable.');
  let marker,line=null;
@@ -19,7 +19,7 @@ export async function rlUsdState(address){
  }
  if(!line)return {...base,activated:true,trustline:false,balance:'0',ready:false};
  if(typeof line.balance!=='string'||line.balance.length>100||!/^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?$/.test(line.balance))throw Error('Token balance is invalid.');
- const frozen=globalFrozen||!!line.freeze_peer,needsAuthorization=requiresAuth&&!line.peer_authorized;
+ const frozen=globalFrozen||!!line.freeze_peer||!!line.deep_freeze_peer||!!line.deep_freeze,needsAuthorization=requiresAuth&&!line.peer_authorized;
  return {...base,activated:true,trustline:true,balance:line.balance,limit:line.limit,ready:!frozen&&!needsAuthorization,frozen,needsAuthorization};
 }
 export async function rlUsdForUser(env,user){const wallet=await walletFor(env,user);if(wallet?.status!=='ready')return json({error:'Create your testnet wallet first.'},409);return json({rlusd:await rlUsdState(wallet.address)});}

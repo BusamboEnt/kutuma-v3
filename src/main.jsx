@@ -47,7 +47,7 @@ function AuthBridge() {
     const status = document.querySelector('#sign-in-status');
     if(status) status.textContent = authenticated ? 'Signed in' : 'Sign in with email';
     window.kutumaRlusdOpen=()=>{if(wallet)showRlusd({wallet,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id});};
-    window.kutumaSend=()=>{if(wallet)showTransfer({wallet,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});};
+    window.kutumaSend=(asset='XRP')=>{if(wallet)showTransfer({wallet,asset,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id,onSend:()=>window.kutumaSend()});};
     window.kutumaAuth = {open: () => {
       if(!ready) {message('Getting ready', 'Secure sign-in is loading. Please try again in a moment.');return;}
       ui.close();
@@ -62,7 +62,7 @@ function AuthBridge() {
         document.querySelector('#account-logout').onclick = async () => {
           try {await logout();setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaRlusd=null;window.kutumaUI.render();ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
         };
-        if(currentWallet){document.querySelector('#account-rlusd').onclick=window.kutumaRlusdOpen;document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});}
+        if(currentWallet){document.querySelector('#account-rlusd').onclick=window.kutumaRlusdOpen;document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id,onSend:()=>window.kutumaSend()});}
         if(!currentWallet)document.querySelector('#create-wallet').onclick=async()=>{
           const owner=user?.id;
           const button=document.querySelector('#create-wallet');button.disabled=true;button.textContent='Setting up your wallet…';
