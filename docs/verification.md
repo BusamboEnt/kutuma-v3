@@ -37,3 +37,11 @@ Sixteen backend checks pass (five provisioning, four activation/balance and seve
 The authenticated real Privy signing flow and testnet payment still require the owner's email session. No faucet or transfer was automatically triggered in testing.
 
 At 320×568, browser QA initialized Privy and received 401 for unauthenticated transfer preparation. The actual transfer UI function was exercised with synthetic tokens, approval and API responses: form, tagged-recipient review, pending receipt, validated receipt and history had no scrolling or clipped controls. Pending and validated text matched their fixtures. This did not generate a real Privy authorization signature or submit a testnet payment. The final frontend invalidates the cached balance on submission and refreshes it after a terminal ledger result.
+
+## RLUSD trust-line milestone (2026-10-15)
+- Official Ripple XRPL developer documentation pins testnet issuer `rQhWct2fv4Vc4KRjRgMrxa8xPN9Zx9iLKV` and hex currency `524C555344000000000000000000000000000000`. Read-only validated account_info confirmed that issuer on testnet.
+- TrustSet reviews use the stored owner address, fixed issuer/currency/limit, NoRipple flag, dynamic XRP reserve/fee checks, and the existing Privy user-approval and persisted receipt flow.
+- Ledger balance lookup requires validated account_lines, checks exact issuer/currency, handles pagination and issuer freeze/authorization restrictions, and never converts RPC failure into zero.
+- Signed-in RLUSD displays verified test tokens or an unchecked dash. Setup does not mint tokens. Ripple's external test-token faucet is linked; no token faucet API is assumed.
+- Full email-authenticated Privy approval and testnet TrustSet still need a signed-in user test. No wallet or on-chain transaction was created by automated checks. RLUSD payments and mobile-money payouts remain unavailable.
+- All 23 backend tests passed, including an encoded TrustSet signed by a local test key through mocked Privy/ledger calls and insufficient-reserve/existing-line rejection. Synthetic Cloudflare browser checks at 320×568 found no scrolling or clipped buttons on setup, review, ready and compact account screens; live RLUSD fixture replaced the sample dollar balance. Unauthenticated live `/api/rlusd` returned 401. These checks do not substitute for a real Privy session.

@@ -1,3 +1,4 @@
+import {rlUsdForUser,prepareRlUsd} from './rlusd.js';
 import {importSPKI, jwtVerify} from 'jose';
 import {prepareTransfer,confirmTransfer,transferStatus,listTransfers} from './transfers.js';
 import {testnetForUser} from './testnet.js';
@@ -33,8 +34,8 @@ export async function walletForUser(request,env,user){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
- if(!['/api/wallet','/api/wallet/balance','/api/wallet/activate','/api/transfers','/api/transfers/prepare','/api/transfers/confirm','/api/transfers/status'].includes(path))return json({error:'Not found'},404);
- if((path.includes('/transfers')&&request.method!==(['/api/transfers','/api/transfers/status'].includes(path)?'GET':'POST'))||!['GET','POST'].includes(request.method)||(path==='/api/wallet/balance'&&request.method!=='GET')||(path==='/api/wallet/activate'&&request.method!=='POST'))return json({error:'Method not allowed'},405);
+ if(!['/api/wallet','/api/wallet/balance','/api/wallet/activate','/api/transfers','/api/transfers/prepare','/api/transfers/confirm','/api/transfers/status','/api/rlusd','/api/rlusd/prepare'].includes(path))return json({error:'Not found'},404);
+ if((path==='/api/rlusd'&&request.method!=='GET')||(path==='/api/rlusd/prepare'&&request.method!=='POST')||(path.includes('/transfers')&&request.method!==(['/api/transfers','/api/transfers/status','/api/rlusd','/api/rlusd/prepare'].includes(path)?'GET':'POST'))||!['GET','POST'].includes(request.method)||(path==='/api/wallet/balance'&&request.method!=='GET')||(path==='/api/wallet/activate'&&request.method!=='POST'))return json({error:'Method not allowed'},405);
  const origin=request.headers.get('Origin');
  if(origin&&origin!==new URL(request.url).origin)return json({error:'Origin not allowed'},403);
  const token=request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1];
@@ -42,5 +43,5 @@ export default {async fetch(request,env){
  let user;
  try{const {payload}=await jwtVerify(token,await tokenKey,{issuer:'privy.io',audience:appId,algorithms:['ES256'],requiredClaims:['exp','iat','sub']});if(!payload.sub?.startsWith('did:privy:'))throw Error();user=payload.sub;}catch{return json({error:'Please sign in again.'},401);}
  if(!env.DB)return json({error:'Wallet storage is unavailable.'},503);
- try{if(path==='/api/transfers')return await listTransfers(env,user);if(path==='/api/transfers/status')return await transferStatus(env,user,new URL(request.url).searchParams.get('id'));if(path.startsWith('/api/transfers/')){const text=await request.text();if(text.length>8192)return json({error:'Request too large.'},413);let input;try{input=JSON.parse(text);}catch{return json({error:'Invalid request.'},400);}if(!input||typeof input!=='object')return json({error:'Invalid request.'},400);if(path.endsWith('/prepare'))return await prepareTransfer(env,user,input);return await confirmTransfer(env,user,input);}if(path!=='/api/wallet')return await testnetForUser(request,env,user,path.endsWith('/activate'));return await walletForUser(request,env,user);}catch{return json({error:'Wallet setup is temporarily unavailable. Please retry.'},503);}
+ try{if(path==='/api/rlusd')return await rlUsdForUser(env,user);if(path==='/api/rlusd/prepare')return await prepareRlUsd(env,user);if(path==='/api/transfers')return await listTransfers(env,user);if(path==='/api/transfers/status')return await transferStatus(env,user,new URL(request.url).searchParams.get('id'));if(path.startsWith('/api/transfers/')){const text=await request.text();if(text.length>8192)return json({error:'Request too large.'},413);let input;try{input=JSON.parse(text);}catch{return json({error:'Invalid request.'},400);}if(!input||typeof input!=='object')return json({error:'Invalid request.'},400);if(path.endsWith('/prepare'))return await prepareTransfer(env,user,input);return await confirmTransfer(env,user,input);}if(path!=='/api/wallet')return await testnetForUser(request,env,user,path.endsWith('/activate'));return await walletForUser(request,env,user);}catch{return json({error:'Wallet setup is temporarily unavailable. Please retry.'},503);}
 }};

@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import {PrivyProvider, usePrivy, useLogin, useAuthorizationSignature} from '@privy-io/react-auth';
 import './style.css';
 import {showTransfer} from './transfer-ui.js';
+import {showRlusd} from './rlusd-ui.js';
 import {showTestnet} from './testnet-ui.js';
 import './wallet.js';
 
@@ -29,13 +30,13 @@ function AuthBridge() {
   currentUser.current = authenticated ? user?.id : null;
   useEffect(() => {
     let cancelled=false;
-    setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaUI.render();
+    setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaRlusd=null;window.kutumaUI.render();
     if(ready && authenticated && user?.id) {
       (async()=>{try{const token=await getAccessToken();if(!token||cancelled)return;const r=await fetch('/api/wallet',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const data=await r.json();if(!cancelled && r.ok)setWallet(data.wallet);}catch{}})();
     }
     return ()=>{cancelled=true;};
   },[ready,authenticated,user?.id,getAccessToken]);
-  useEffect(()=>{window.kutumaWallet=wallet;window.kutumaUI.render();},[wallet]);
+  useEffect(()=>{let cancelled=false;window.kutumaWallet=wallet;window.kutumaUI.render();if(wallet)(async()=>{try{const token=await getAccessToken();const r=await fetch('/api/rlusd',{headers:{Authorization:'Bearer '+token},cache:'no-store'});const d=await r.json();if(r.ok&&!cancelled){window.kutumaRlusd=d.rlusd;ui.render();}}catch{}})();return()=>{cancelled=true;};},[wallet,getAccessToken]);
   const {login} = useLogin({onError: () => message('Couldn’t sign in', 'Please try again. Email sign-in must be enabled and this domain allowed in the Privy dashboard.')});
   useEffect(() => {
     buttons().forEach(b => {b.disabled = !ready;});
@@ -45,6 +46,7 @@ function AuthBridge() {
     connect.textContent = wallet ? 'Wallet' : 'Get wallet';
     const status = document.querySelector('#sign-in-status');
     if(status) status.textContent = authenticated ? 'Signed in' : 'Sign in with email';
+    window.kutumaRlusdOpen=()=>{if(wallet)showRlusd({wallet,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id});};
     window.kutumaSend=()=>{if(wallet)showTransfer({wallet,getAccessToken,approve:generateAuthorizationSignature,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});};
     window.kutumaAuth = {open: () => {
       if(!ready) {message('Getting ready', 'Secure sign-in is loading. Please try again in a moment.');return;}
@@ -53,14 +55,14 @@ function AuthBridge() {
       const renderAccount = (currentWallet) => {
         const email = user?.email?.address || 'Privy account';
         const details = currentWallet
-          ? `<label>Your XRP Ledger testnet address<input readonly id="wallet-address" value="${ui.escape(currentWallet.address)}"></label>${ui.notice('Testnet only. Do not send real funds. Account activation and balances have not been checked. Displayed dollar balances remain sample data.')}<button class="primary" id="copy-address">Copy testnet address</button>`
+          ? `<label>Your XRP Ledger testnet address<input readonly id="wallet-address" value="${ui.escape(currentWallet.address)}"></label>${ui.notice('Testnet only. Do not send real funds. Check testnet balances and set up test RLUSD below.')}<button class="primary" id="copy-address">Testnet balance & activation</button><button class="secondary" id="account-rlusd">Test RLUSD</button>`
           : `${ui.notice('Create one user-owned XRPL address for testnet use. No real funds, activation or transfers are involved. Future sign-ins reuse the same wallet.')}<button class="primary" id="create-wallet">Create testnet wallet</button>`;
-        ui.show('YOUR ACCOUNT', `<h2>${currentWallet?'Your testnet wallet.':'You’re signed in.'}</h2><p>${ui.escape(email)}</p>${details}<button class="secondary" id="account-done">Back to wallet</button><button class="secondary" id="account-logout">Sign out</button>`);
-        document.querySelector('#account-done').onclick = ui.close;
+        ui.show('YOUR ACCOUNT', `<h2>${currentWallet?'Your testnet wallet.':'You’re signed in.'}</h2><p>${ui.escape(email)}</p>${details}<button class="secondary" id="account-logout">Sign out</button>`);
+        document.querySelector('#flow-content').classList.add('transfer-screen');
         document.querySelector('#account-logout').onclick = async () => {
-          try {await logout();setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaUI.render();ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
+          try {await logout();setWallet(null);window.kutumaWallet=null;window.kutumaBalance=null;window.kutumaRlusd=null;window.kutumaUI.render();ui.close();} catch {message('Couldn’t sign out', 'Please try again.');}
         };
-        if(currentWallet){document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});}
+        if(currentWallet){document.querySelector('#account-rlusd').onclick=window.kutumaRlusdOpen;document.querySelector('#copy-address').textContent='Testnet balance & activation';document.querySelector('#copy-address').onclick=()=>showTestnet({wallet:currentWallet,getAccessToken,isCurrent:()=>currentUser.current===user?.id,onSend:window.kutumaSend});}
         if(!currentWallet)document.querySelector('#create-wallet').onclick=async()=>{
           const owner=user?.id;
           const button=document.querySelector('#create-wallet');button.disabled=true;button.textContent='Setting up your wallet…';
@@ -76,7 +78,7 @@ function AuthBridge() {
       renderAccount(wallet);
     }};
     connect.onclick=()=>window.kutumaAuth.open();
-    return () => {delete window.kutumaAuth;delete window.kutumaSend;};
+    return () => {delete window.kutumaAuth;delete window.kutumaSend;delete window.kutumaRlusdOpen;};
   }, [ready, authenticated, user, login, logout, wallet, getAccessToken, generateAuthorizationSignature]);
   return null;
 }

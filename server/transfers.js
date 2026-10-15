@@ -6,8 +6,8 @@ import {externalId,json} from './helpers.js';
 const appId='cmtq2e1jx00ec0cjs0chvb1s6';
 const rpcUrl='https://s.altnet.rippletest.net:51234/';
 export function toDrops(value){if(!/^(?:0|[1-9]\d{0,10})(?:\.\d{1,6})?$/.test(String(value)))throw Error('Enter XRP with at most six decimal places.');const [a,b='']=String(value).split('.');return BigInt(a)*1000000n+BigInt(b.padEnd(6,'0'));}
-async function rpc(method,params={}){const r=await fetch(rpcUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,params:[params]}),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Testnet is unavailable.');return (await r.json()).result;}
-function view(row){const tx=JSON.parse(row.transaction_json);return {id:row.id,status:row.status,hash:row.tx_hash,resultCode:row.result_code,destination:tx.Destination,amountDrops:tx.Amount,feeDrops:tx.Fee,createdAt:row.created_at,network:'xrpl-testnet'};}
+export async function rpc(method,params={}){const r=await fetch(rpcUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,params:[params]}),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Testnet is unavailable.');return (await r.json()).result;}
+function view(row){const tx=JSON.parse(row.transaction_json);return {id:row.id,kind:tx.TransactionType==='TrustSet'?'trustline':'payment',status:row.status,hash:row.tx_hash,resultCode:row.result_code,destination:tx.Destination||tx.LimitAmount?.issuer,amountDrops:tx.Amount||null,feeDrops:tx.Fee,createdAt:row.created_at,network:'xrpl-testnet'};}
 export async function prepareTransfer(env,user,input){
  const owner=await externalId(user);
  const wallet=await env.DB.prepare('SELECT * FROM wallets WHERE external_id=?').bind(owner).first();
@@ -30,10 +30,13 @@ export async function prepareTransfer(env,user,input){
  if(fee<1n||fee>10000n)return json({error:'Network fees are unusually high. Please try later.'},503);
  if(BigInt(source.account_data.Balance)<amount+fee+reserve)return json({error:'Keep enough test XRP for the account reserve and network fee.'},400);
  if(destination?.error==='actNotFound'&&amount<base)return json({error:'An unactivated recipient needs at least the network base reserve.'},400);
- const id=crypto.randomUUID(),expires=Date.now()+120000;
  const transaction={TransactionType:'Payment',Account:wallet.address,Destination:input.destination,Amount:amount.toString(),Fee:fee.toString(),Sequence:source.account_data.Sequence,LastLedgerSequence:ledger.seq+20,SigningPubKey:wallet.public_key,...(tag===undefined?{}:{DestinationTag:tag})};
+ return savePrepared(env,owner,wallet,transaction,reserve,ledger.seq);
+}
+export async function savePrepared(env,owner,wallet,transaction,reserve,minLedger){
+ const id=crypto.randomUUID(),expires=Date.now()+120000;
  const authorization={version:1,method:'POST',url:`https://api.privy.io/v1/wallets/${wallet.wallet_id}/rpc`,body:{method:'xrpl_signTransaction',params:{transaction:encodeForSigning(transaction),encoding:'hex'}},headers:{'privy-app-id':appId,'privy-idempotency-key':id,'privy-request-expiry':String(expires)}};
- const result=await env.DB.prepare("INSERT INTO transfers(id,external_id,transaction_json,authorization_json,expires_at,min_ledger) SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM transfers WHERE external_id=? AND expires_at>?)<3").bind(id,owner,JSON.stringify(transaction),JSON.stringify(authorization),expires,ledger.seq,owner,Date.now()).run();
+ const result=await env.DB.prepare("INSERT INTO transfers(id,external_id,transaction_json,authorization_json,expires_at,min_ledger) SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM transfers WHERE external_id=? AND expires_at>?)<3").bind(id,owner,JSON.stringify(transaction),JSON.stringify(authorization),expires,minLedger,owner,Date.now()).run();
  if(Number(result.meta?.changes??result.changes)!==1)return json({error:'Finish or wait for your earlier transfer reviews before starting another.'},429);
  return json({id,transaction,authorization,reserveDrops:reserve.toString(),expiresAt:expires,network:'xrpl-testnet'});
 }
